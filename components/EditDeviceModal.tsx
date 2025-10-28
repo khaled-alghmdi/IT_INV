@@ -150,7 +150,7 @@ const EditDeviceModal = ({ isOpen, device, onClose }: EditDeviceModalProps) => {
                 value={formData.asset_number}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
               />
             </div>
 
@@ -165,7 +165,7 @@ const EditDeviceModal = ({ isOpen, device, onClose }: EditDeviceModalProps) => {
                 value={formData.serial_number}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
               />
             </div>
 
@@ -181,7 +181,7 @@ const EditDeviceModal = ({ isOpen, device, onClose }: EditDeviceModalProps) => {
                 onChange={handleChange}
                 required
                 placeholder="e.g., Laptop, Monitor, Desktop"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
               />
             </div>
 
@@ -195,7 +195,7 @@ const EditDeviceModal = ({ isOpen, device, onClose }: EditDeviceModalProps) => {
                 value={formData.status}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
               >
                 <option value="available">Available</option>
                 <option value="assigned">Assigned</option>
@@ -214,7 +214,7 @@ const EditDeviceModal = ({ isOpen, device, onClose }: EditDeviceModalProps) => {
                 value={formData.brand}
                 onChange={handleChange}
                 placeholder="e.g., Dell, HP, Apple"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
               />
             </div>
 
@@ -228,7 +228,7 @@ const EditDeviceModal = ({ isOpen, device, onClose }: EditDeviceModalProps) => {
                 name="model"
                 value={formData.model}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
               />
             </div>
 
@@ -245,7 +245,7 @@ const EditDeviceModal = ({ isOpen, device, onClose }: EditDeviceModalProps) => {
                     value={formData.assigned_to}
                     onChange={handleChange}
                     placeholder="Employee name"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
                   />
                 </div>
 
@@ -259,7 +259,7 @@ const EditDeviceModal = ({ isOpen, device, onClose }: EditDeviceModalProps) => {
                     name="assigned_date"
                     value={formData.assigned_date}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
                   />
                 </div>
               </>
@@ -292,7 +292,7 @@ const EditDeviceModal = ({ isOpen, device, onClose }: EditDeviceModalProps) => {
             <button
               type="submit"
               disabled={loading}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="px-6 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-semibold shadow-md hover:shadow-lg"
             >
               {loading ? "Updating..." : "Update Device"}
             </button>

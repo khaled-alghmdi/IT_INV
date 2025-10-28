@@ -126,14 +126,14 @@ const DeviceList = ({ devices, onEdit, onDelete }: DeviceListProps) => {
                   <div className="flex justify-end gap-2">
                     <button
                       onClick={() => onEdit(device)}
-                      className="text-blue-600 hover:text-blue-900 p-2 rounded hover:bg-blue-50 transition-colors"
+                      className="text-green-600 hover:text-green-900 p-2 rounded-lg hover:bg-green-50 transition-all shadow-sm hover:shadow"
                       aria-label={`Edit ${device.asset_number}`}
                     >
                       <Edit2 className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => onDelete(device.id)}
-                      className="text-red-600 hover:text-red-900 p-2 rounded hover:bg-red-50 transition-colors"
+                      className="text-red-600 hover:text-red-900 p-2 rounded-lg hover:bg-red-50 transition-all shadow-sm hover:shadow"
                       aria-label={`Delete ${device.asset_number}`}
                     >
                       <Trash2 className="w-4 h-4" />

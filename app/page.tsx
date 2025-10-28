@@ -7,9 +7,18 @@ import DeviceList from "@/components/DeviceList";
 import AddDeviceModal from "@/components/AddDeviceModal";
 import EditDeviceModal from "@/components/EditDeviceModal";
 import Header from "@/components/Header";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import { Plus } from "lucide-react";
 
 export default function Home() {
+  return (
+    <ProtectedRoute>
+      <HomeContent />
+    </ProtectedRoute>
+  );
+}
+
+function HomeContent() {
   const [devices, setDevices] = useState<Device[]>([]);
   const [filteredDevices, setFilteredDevices] = useState<Device[]>([]);
   const [loading, setLoading] = useState(true);
@@ -106,7 +115,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-green-50/30 via-white to-emerald-50/30">
       <Header
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
@@ -120,7 +129,7 @@ export default function Home() {
           <h2 className="text-2xl font-bold text-gray-900">Devices</h2>
           <button
             onClick={handleAddDevice}
-            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            className="flex items-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-2.5 rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all shadow-md hover:shadow-lg font-semibold"
             aria-label="Add new device"
           >
             <Plus className="w-5 h-5" />
@@ -130,7 +139,7 @@ export default function Home() {
 
         {loading ? (
           <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
           </div>
         ) : (
           <DeviceList
