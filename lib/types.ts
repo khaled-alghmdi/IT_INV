@@ -1,5 +1,7 @@
 export type DeviceStatus = "assigned" | "available" | "not_working";
 
+export type UserRole = "admin" | "user";
+
 export interface Device {
   id: string;
   asset_number: string;
@@ -27,3 +29,11 @@ export interface DeviceFormData {
   notes: string;
 }
 
+export interface UserRoleData {
+  id: string;
+  user_id: string;
+  email: string;
+  role: UserRole;
+  created_at: string;
+  updated_at: string;
+}

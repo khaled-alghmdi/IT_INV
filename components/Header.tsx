@@ -1,9 +1,10 @@
 "use client";
 
-import { Search, LogOut, User } from "lucide-react";
+import { Search, LogOut, User, Users, LayoutDashboard } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 
 interface HeaderProps {
   searchTerm: string;
@@ -27,6 +28,7 @@ const Header = ({
 }: HeaderProps) => {
   const { user, signOut } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
 
   const handleSignOut = async () => {
     await signOut();
@@ -53,19 +55,47 @@ const Header = ({
             </h1>
           </div>
           
-          {/* User Info and Logout */}
-          <div className="flex items-center gap-4">
+          {/* Navigation and User Info */}
+          <div className="flex items-center gap-3">
+            {/* Navigation Links */}
+            <Link
+              href="/"
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all font-medium ${
+                pathname === "/"
+                  ? "bg-green-100 text-green-700 border border-green-200"
+                  : "text-gray-600 hover:bg-gray-100"
+              }`}
+            >
+              <LayoutDashboard className="w-4 h-4" />
+              <span className="hidden sm:inline">Dashboard</span>
+            </Link>
+            
+            <Link
+              href="/users"
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all font-medium ${
+                pathname === "/users"
+                  ? "bg-green-100 text-green-700 border border-green-200"
+                  : "text-gray-600 hover:bg-gray-100"
+              }`}
+            >
+              <Users className="w-4 h-4" />
+              <span className="hidden sm:inline">Users</span>
+            </Link>
+
+            {/* User Info */}
             <div className="flex items-center gap-2 px-3 py-2 bg-green-50 rounded-lg border border-green-100">
               <User className="w-4 h-4 text-green-600" />
-              <span className="text-sm font-medium text-green-700">{user?.email}</span>
+              <span className="text-sm font-medium text-green-700 hidden md:inline">{user?.email}</span>
             </div>
+            
+            {/* Sign Out */}
             <button
               onClick={handleSignOut}
               className="flex items-center gap-2 px-4 py-2 text-sm text-white bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 rounded-lg transition-all shadow-md hover:shadow-lg font-medium"
               aria-label="Sign out"
             >
               <LogOut className="w-4 h-4" />
-              <span>Sign Out</span>
+              <span className="hidden sm:inline">Sign Out</span>
             </button>
           </div>
         </div>

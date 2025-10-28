@@ -1,9 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { DeviceFormData } from "@/lib/types";
 import { X } from "lucide-react";
+
+interface UserOption {
+  id: string;
+  email: string;
+}
 
 interface AddDeviceModalProps {
   isOpen: boolean;
@@ -24,6 +29,34 @@ const AddDeviceModal = ({ isOpen, onClose }: AddDeviceModalProps) => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [users, setUsers] = useState<UserOption[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchUsers();
+    }
+  }, [isOpen]);
+
+  const fetchUsers = async () => {
+    try {
+      setLoadingUsers(true);
+      const response = await fetch("/api/users");
+      
+      if (response.ok) {
+        const { users: fetchedUsers } = await response.json();
+        const userOptions = fetchedUsers.map((user: any) => ({
+          id: user.id,
+          email: user.email,
+        }));
+        setUsers(userOptions);
+      }
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -219,15 +252,24 @@ const AddDeviceModal = ({ isOpen, onClose }: AddDeviceModalProps) => {
                   <label htmlFor="assigned_to" className="block text-sm font-medium text-gray-700 mb-1">
                     Assigned To
                   </label>
-                  <input
-                    type="text"
+                  <select
                     id="assigned_to"
                     name="assigned_to"
                     value={formData.assigned_to}
                     onChange={handleChange}
-                    placeholder="Employee name"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
-                  />
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all bg-white"
+                  >
+                    <option value="">Select a user...</option>
+                    {loadingUsers ? (
+                      <option disabled>Loading users...</option>
+                    ) : (
+                      users.map((user) => (
+                        <option key={user.id} value={user.email}>
+                          {user.email}
+                        </option>
+                      ))
+                    )}
+                  </select>
                 </div>
 
                 <div>
