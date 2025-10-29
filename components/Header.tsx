@@ -1,8 +1,11 @@
 "use client";
 
-import { Search, LogOut, User, Users, LayoutDashboard } from "lucide-react";
+import { Search, LogOut, User, Users, LayoutDashboard, Bell, FileText } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter, usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { getUserRole } from "@/lib/auth-helpers";
+import { supabase } from "@/lib/supabase";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -29,6 +32,55 @@ const Header = ({
   const { user, signOut } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
+
+  useEffect(() => {
+    const checkRole = async () => {
+      const role = await getUserRole();
+      setIsAdmin(role === "admin");
+      
+      if (role === "admin") {
+        fetchPendingRequests();
+        
+        // Subscribe to changes in device_requests table
+        const channel = supabase
+          .channel("device_requests_changes")
+          .on(
+            "postgres_changes",
+            {
+              event: "*",
+              schema: "public",
+              table: "device_requests",
+            },
+            () => {
+              fetchPendingRequests();
+            }
+          )
+          .subscribe();
+
+        return () => {
+          supabase.removeChannel(channel);
+        };
+      }
+    };
+
+    checkRole();
+  }, []);
+
+  const fetchPendingRequests = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("device_requests")
+        .select("id", { count: "exact" })
+        .eq("status", "pending");
+
+      if (error) throw error;
+      setPendingRequestsCount(data?.length || 0);
+    } catch (error) {
+      console.error("Error fetching pending requests:", error);
+    }
+  };
 
   const handleSignOut = async () => {
     await signOut();
@@ -40,47 +92,72 @@ const Header = ({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
-            <div className="bg-white p-2 rounded-xl shadow-md border border-green-100">
+            <div className="p-2 transition-all duration-300 hover:scale-105 hover:drop-shadow-[0_0_12px_rgba(34,197,94,0.6)] cursor-pointer">
               <Image 
-                src="/tamer-logo.png" 
+                src="/Tamer_Logo.png" 
                 alt="Tamer Logo" 
-                width={120} 
-                height={40}
-                className="h-10 w-auto"
+                width={150} 
+                height={50}
+                className="h-12 w-auto object-contain transition-all duration-300"
                 priority
+                unoptimized
               />
             </div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-700 bg-clip-text text-transparent">
-              IT Inventory Management
-            </h1>
+            <div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-700 bg-clip-text text-transparent">
+                Infora
+              </h1>
+              <p className="text-xs text-gray-500 font-medium tracking-wide">Smart Asset Management</p>
+            </div>
           </div>
           
           {/* Navigation and User Info */}
           <div className="flex items-center gap-3">
-            {/* Navigation Links */}
-            <Link
-              href="/"
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all font-medium ${
-                pathname === "/"
-                  ? "bg-green-100 text-green-700 border border-green-200"
-                  : "text-gray-600 hover:bg-gray-100"
-              }`}
-            >
-              <LayoutDashboard className="w-4 h-4" />
-              <span className="hidden sm:inline">Dashboard</span>
-            </Link>
-            
-            <Link
-              href="/users"
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all font-medium ${
-                pathname === "/users"
-                  ? "bg-green-100 text-green-700 border border-green-200"
-                  : "text-gray-600 hover:bg-gray-100"
-              }`}
-            >
-              <Users className="w-4 h-4" />
-              <span className="hidden sm:inline">Users</span>
-            </Link>
+            {/* Navigation Links - Admin Only */}
+            {isAdmin && (
+              <>
+                <Link
+                  href="/"
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all font-medium ${
+                    pathname === "/"
+                      ? "bg-green-100 text-green-700 border border-green-200"
+                      : "text-gray-600 hover:bg-gray-100"
+                  }`}
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                  <span className="hidden sm:inline">Dashboard</span>
+                </Link>
+                
+                <Link
+                  href="/users"
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all font-medium ${
+                    pathname === "/users"
+                      ? "bg-green-100 text-green-700 border border-green-200"
+                      : "text-gray-600 hover:bg-gray-100"
+                  }`}
+                >
+                  <Users className="w-4 h-4" />
+                  <span className="hidden sm:inline">Users</span>
+                </Link>
+
+                <Link
+                  href="/requests"
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all font-medium relative ${
+                    pathname === "/requests"
+                      ? "bg-green-100 text-green-700 border border-green-200"
+                      : "text-gray-600 hover:bg-gray-100"
+                  }`}
+                >
+                  <FileText className="w-4 h-4" />
+                  <span className="hidden sm:inline">Requests</span>
+                  {pendingRequestsCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                      {pendingRequestsCount}
+                    </span>
+                  )}
+                </Link>
+              </>
+            )}
 
             {/* User Info */}
             <div className="flex items-center gap-2 px-3 py-2 bg-green-50 rounded-lg border border-green-100">

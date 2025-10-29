@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AdminRoute from "@/components/AdminRoute";
-import Header from "@/components/Header";
+import Sidebar from "@/components/Sidebar";
+import Navbar from "@/components/Navbar";
 import { Users, Package, ChevronDown, ChevronUp, Shield, User } from "lucide-react";
 import { updateUserRole } from "@/lib/auth-helpers";
 import { UserRole } from "@/lib/types";
@@ -101,7 +102,7 @@ function UsersPageContent() {
       });
 
       // Match devices to users by email
-      const usersWithDevicesData: UserWithDevices[] = users.map((user) => {
+        const usersWithDevicesData: UserWithDevices[] = users.map((user: any) => {
         const userDevices = devices?.filter(
           (device) => device.assigned_to?.toLowerCase() === user.email?.toLowerCase()
         ) || [];
@@ -153,30 +154,24 @@ function UsersPageContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50/30 via-white to-emerald-50/30">
-      <Header
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        statusFilter="all"
-        onStatusFilterChange={() => {}}
-        stats={stats}
-      />
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-3">
-            <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-2 rounded-xl shadow-md">
-              <Users className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">Users & Their Devices</h2>
-              <p className="text-sm text-gray-600">View all users and their assigned devices</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Summary Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div className="min-h-screen bg-gradient-to-br from-green-50/30 via-white to-emerald-50/30 dots-background flex flex-col">
+      {/* Top Navbar */}
+      <Navbar />
+      
+      <div className="flex flex-1">
+        {/* Sidebar */}
+        <Sidebar />
+        
+        {/* Main Content */}
+        <div className="flex-1 ml-64">
+          {/* Page Header */}
+          <div className="bg-white shadow-sm border-b border-gray-200 sticky top-[60px] z-40">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">User Management</h1>
+            <p className="text-gray-600 mb-4">Manage user roles and device assignments</p>
+            
+            {/* Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-4 rounded-xl border border-green-200 shadow-sm">
             <p className="text-sm text-green-700 font-semibold">Total Users</p>
             <p className="text-3xl font-bold text-green-900 mt-1">{totalUsers}</p>
@@ -192,7 +187,10 @@ function UsersPageContent() {
             </p>
           </div>
         </div>
+          </div>
+          </div>
 
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {loading ? (
           <div className="flex justify-center items-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
@@ -323,7 +321,9 @@ function UsersPageContent() {
             </div>
           </div>
         )}
-      </main>
+          </main>
+        </div>
+      </div>
     </div>
   );
 }

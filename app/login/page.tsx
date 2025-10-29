@@ -47,18 +47,20 @@ export default function LoginPage() {
         <div className="bg-white rounded-2xl shadow-2xl border border-green-100 p-8 glow-green">
           {/* Logo and Title */}
           <div className="flex flex-col items-center mb-8">
-            <div className="bg-white p-4 rounded-2xl mb-4 shadow-lg border border-green-100">
+            <div className="p-2 mb-4 transition-all duration-300 hover:scale-110 hover:drop-shadow-[0_0_15px_rgba(34,197,94,0.5)] cursor-pointer">
               <Image 
-                src="/tamer-logo.png" 
+                src="/Tamer_Logo-removebg-preview.png" 
                 alt="Tamer Logo" 
-                width={180} 
-                height={60}
-                className="h-14 w-auto"
+                width={200} 
+                height={80}
+                className="h-16 w-auto object-contain transition-all duration-300"
                 priority
+                unoptimized
               />
             </div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">IT Inventory</h1>
-            <p className="text-gray-600 mt-2 font-medium">Sign in to your account</p>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-1">Infora</h1>
+            <p className="text-xs text-gray-500 font-medium tracking-wider uppercase mb-3">Smart Asset Management</p>
+            <p className="text-gray-600 text-sm font-medium">Sign in to your account</p>
           </div>
 
           {/* Error Message */}
@@ -129,7 +131,7 @@ export default function LoginPage() {
           {/* Sign Up Link */}
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
-              Don't have an account?{" "}
+              Don&apos;t have an account?{" "}
               <Link href="/signup" className="text-green-600 hover:text-green-700 font-semibold">
                 Sign up
               </Link>
@@ -139,7 +141,7 @@ export default function LoginPage() {
 
         {/* Additional Info */}
         <p className="text-center text-sm text-gray-600 mt-6 font-medium">
-          🔒 Secure access to IT asset management
+          Powered by Tamer · Intelligent Infrastructure Management
         </p>
       </div>
     </div>

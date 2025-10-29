@@ -37,3 +37,21 @@ export interface UserRoleData {
   created_at: string;
   updated_at: string;
 }
+
+export type RequestStatus = "pending" | "approved" | "rejected";
+
+export interface DeviceRequest {
+  id: string;
+  user_id: string;
+  user_email: string;
+  device_type: string;
+  brand: string | null;
+  model: string | null;
+  justification: string;
+  status: RequestStatus;
+  admin_notes: string | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}

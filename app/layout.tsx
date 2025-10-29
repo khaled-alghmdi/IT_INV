@@ -3,8 +3,8 @@ import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
 
 export const metadata: Metadata = {
-  title: "IT Inventory Management",
-  description: "Track and manage IT department assets and devices",
+  title: "Infora - Smart Asset Management",
+  description: "Intelligent infrastructure management for modern organizations",
 };
 
 export default function RootLayout({
