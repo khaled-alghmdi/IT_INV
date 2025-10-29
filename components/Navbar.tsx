@@ -8,13 +8,13 @@ const Navbar = () => {
       <div className="max-w-full px-6 py-2.5">
         <div className="flex items-center gap-4">
           {/* Logo */}
-          <div className="p-1 transition-all duration-300 hover:scale-105 hover:drop-shadow-[0_0_12px_rgba(34,197,94,0.6)] cursor-pointer">
+          <div className="transition-all duration-300 hover:scale-110 hover:drop-shadow-[0_0_15px_rgba(34,197,94,0.5)] cursor-pointer">
             <Image 
               src="/Tamer_Logo.png" 
               alt="Tamer Logo" 
-              width={100} 
-              height={33}
-              className="h-8 w-auto object-contain transition-all duration-300"
+              width={120} 
+              height={40}
+              className="h-10 w-auto object-contain"
               priority
               unoptimized
             />

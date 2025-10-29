@@ -48,9 +48,9 @@ export default function LoginPage() {
           {/* Logo and Title */}
           <div className="flex flex-col items-center mb-8">
             <div className="p-2 mb-4 transition-all duration-300 hover:scale-110 hover:drop-shadow-[0_0_15px_rgba(34,197,94,0.5)] cursor-pointer">
-              <Image 
-                src="/Tamer_Logo-removebg-preview.png" 
-                alt="Tamer Logo" 
+              <Image
+                src="/Tamer_Logo.png" 
+                alt="Tamer Logo"
                 width={200} 
                 height={80}
                 className="h-16 w-auto object-contain transition-all duration-300"

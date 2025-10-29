@@ -12,6 +12,7 @@ export interface Device {
   status: DeviceStatus;
   assigned_to: string | null;
   assigned_date: string | null;
+  purchase_date: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
@@ -26,6 +27,7 @@ export interface DeviceFormData {
   status: DeviceStatus;
   assigned_to: string;
   assigned_date: string;
+  purchase_date: string;
   notes: string;
 }
 

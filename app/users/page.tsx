@@ -6,7 +6,9 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import AdminRoute from "@/components/AdminRoute";
 import Sidebar from "@/components/Sidebar";
 import Navbar from "@/components/Navbar";
-import { Users, Package, ChevronDown, ChevronUp, Shield, User } from "lucide-react";
+import AddUserModal from "@/components/AddUserModal";
+import EditUserModal from "@/components/EditUserModal";
+import { Users, Package, ChevronDown, ChevronUp, Shield, User, UserPlus, Edit2, Trash2 } from "lucide-react";
 import { updateUserRole } from "@/lib/auth-helpers";
 import { UserRole } from "@/lib/types";
 
@@ -48,6 +50,9 @@ function UsersPageContent() {
   const [loading, setLoading] = useState(true);
   const [expandedUsers, setExpandedUsers] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState("");
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<{id: string; email: string; role: string} | null>(null);
 
   useEffect(() => {
     fetchUsersAndDevices();
@@ -136,6 +141,52 @@ function UsersPageContent() {
     setExpandedUsers(newExpanded);
   };
 
+  const handleEditUser = (user: UserData) => {
+    setSelectedUser({
+      id: user.id,
+      email: user.email,
+      role: user.role || "user"
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleDeleteUser = async (userId: string, userEmail: string) => {
+    if (!confirm(`Are you sure you want to delete user "${userEmail}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      // Delete user role
+      const { error: roleError } = await supabase
+        .from("user_roles")
+        .delete()
+        .eq("user_id", userId);
+
+      if (roleError) throw roleError;
+
+      // Delete user from users table
+      const { error: userError } = await supabase
+        .from("users")
+        .delete()
+        .eq("id", userId);
+
+      if (userError) throw userError;
+
+      // Refresh the list
+      await fetchUsersAndDevices();
+    } catch (error: any) {
+      console.error("Error deleting user:", error);
+      alert("Failed to delete user: " + error.message);
+    }
+  };
+
+  const handleModalClose = () => {
+    setIsAddModalOpen(false);
+    setIsEditModalOpen(false);
+    setSelectedUser(null);
+    fetchUsersAndDevices();
+  };
+
   const filteredUsers = usersWithDevices.filter((userWithDevices) =>
     userWithDevices.user.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -167,8 +218,20 @@ function UsersPageContent() {
           {/* Page Header */}
           <div className="bg-white shadow-sm border-b border-gray-200 sticky top-[60px] z-40">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">User Management</h1>
-            <p className="text-gray-600 mb-4">Manage user roles and device assignments</p>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
+                <p className="text-gray-600 mt-1">Manage user roles and device assignments</p>
+              </div>
+              <button
+                onClick={() => setIsAddModalOpen(true)}
+                className="flex items-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-3 rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all shadow-md hover:shadow-lg font-semibold"
+                aria-label="Add new user"
+              >
+                <UserPlus className="w-5 h-5" />
+                Add User
+              </button>
+            </div>
             
             {/* Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -264,6 +327,32 @@ function UsersPageContent() {
                       </div>
                     </button>
 
+                    {/* User Actions */}
+                    <div className="px-6 pb-4 flex gap-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditUser(userWithDevices.user);
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-all font-medium text-sm border border-blue-200"
+                        aria-label={`Edit user ${userWithDevices.user.email}`}
+                      >
+                        <Edit2 className="w-4 h-4" />
+                        Edit Role
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteUser(userWithDevices.user.id, userWithDevices.user.email);
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-all font-medium text-sm border border-red-200"
+                        aria-label={`Delete user ${userWithDevices.user.email}`}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Delete
+                      </button>
+                    </div>
+
                     {/* Devices List */}
                     {isExpanded && hasDevices && (
                       <div className="px-6 pb-4 bg-gray-50">
@@ -324,6 +413,10 @@ function UsersPageContent() {
           </main>
         </div>
       </div>
+
+      {/* Modals */}
+      <AddUserModal isOpen={isAddModalOpen} onClose={handleModalClose} />
+      <EditUserModal isOpen={isEditModalOpen} onClose={handleModalClose} user={selectedUser} />
     </div>
   );
 }

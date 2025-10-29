@@ -1,6 +1,6 @@
 "use client";
 
-import { LogOut, User, Users, LayoutDashboard, FileText, Package, Monitor } from "lucide-react";
+import { LogOut, User, Users, LayoutDashboard, FileText, Package, Monitor, HardDrive, BarChart3 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -103,6 +103,18 @@ const Sidebar = () => {
               </Link>
 
               <Link
+                href="/devices"
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all font-medium ${
+                  pathname === "/devices"
+                    ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-md"
+                    : "text-gray-700 hover:bg-white hover:shadow-sm"
+                }`}
+              >
+                <HardDrive className="w-5 h-5" />
+                <span className="text-sm">Devices</span>
+              </Link>
+
+              <Link
                 href="/users"
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all font-medium ${
                   pathname === "/users"
@@ -129,6 +141,18 @@ const Sidebar = () => {
                     {pendingRequestsCount}
                   </span>
                 )}
+              </Link>
+
+              <Link
+                href="/reports"
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all font-medium ${
+                  pathname === "/reports"
+                    ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-md"
+                    : "text-gray-700 hover:bg-white hover:shadow-sm"
+                }`}
+              >
+                <BarChart3 className="w-5 h-5" />
+                <span className="text-sm">Reports</span>
               </Link>
             </>
           ) : (

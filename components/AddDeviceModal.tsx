@@ -25,6 +25,7 @@ const AddDeviceModal = ({ isOpen, onClose }: AddDeviceModalProps) => {
     status: "available",
     assigned_to: "",
     assigned_date: "",
+    purchase_date: "",
     notes: "",
   });
   const [loading, setLoading] = useState(false);
