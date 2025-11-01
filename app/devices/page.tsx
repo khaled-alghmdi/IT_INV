@@ -9,7 +9,7 @@ import EditDeviceModal from "@/components/EditDeviceModal";
 import Sidebar from "@/components/Sidebar";
 import Navbar from "@/components/Navbar";
 import AdminRoute from "@/components/AdminRoute";
-import { Plus, Search, HardDrive } from "lucide-react";
+import { Plus, Search, HardDrive, Trash2 } from "lucide-react";
 
 export default function DevicesPage() {
   return (
@@ -28,6 +28,8 @@ function DevicesContent() {
   const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [deviceToDelete, setDeviceToDelete] = useState<Device | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     fetchDevices();
@@ -88,6 +90,39 @@ function DevicesContent() {
   const handleEditDevice = (device: Device) => {
     setSelectedDevice(device);
     setIsEditModalOpen(true);
+  };
+
+  const handleDeleteDevice = (deviceId: string) => {
+    const device = devices.find(d => d.id === deviceId);
+    if (!device) return;
+    setDeviceToDelete(device);
+  };
+
+  const confirmDelete = async () => {
+    if (!deviceToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase
+        .from("devices")
+        .delete()
+        .eq("id", deviceToDelete.id);
+
+      if (error) throw error;
+
+      // Refresh the device list
+      fetchDevices();
+      setDeviceToDelete(null);
+    } catch (error: any) {
+      console.error("Error deleting device:", error);
+      alert(`Failed to delete device: ${error.message || 'Unknown error'}`);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const cancelDelete = () => {
+    setDeviceToDelete(null);
   };
 
   // Calculate stats
@@ -197,7 +232,7 @@ function DevicesContent() {
               <DeviceList
                 devices={filteredDevices}
                 onEdit={handleEditDevice}
-                onDelete={fetchDevices}
+                onDelete={handleDeleteDevice}
               />
             )}
           </main>
@@ -215,6 +250,78 @@ function DevicesContent() {
           device={selectedDevice}
           onClose={handleModalClose}
         />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deviceToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 animate-fade-in">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="bg-red-100 p-3 rounded-full">
+                <Trash2 className="w-6 h-6 text-red-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900">Delete Device</h3>
+            </div>
+            
+            <p className="text-gray-700 mb-4">
+              Are you sure you want to permanently delete this device? This action cannot be undone.
+            </p>
+
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="font-semibold text-gray-700">Asset Number:</span>
+                  <span className="text-gray-900 font-mono">{deviceToDelete.asset_number}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-semibold text-gray-700">Type:</span>
+                  <span className="text-gray-900">{deviceToDelete.device_type}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-semibold text-gray-700">Brand:</span>
+                  <span className="text-gray-900">{deviceToDelete.brand || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-semibold text-gray-700">Model:</span>
+                  <span className="text-gray-900">{deviceToDelete.model || 'N/A'}</span>
+                </div>
+                {deviceToDelete.assigned_to && (
+                  <div className="flex justify-between">
+                    <span className="font-semibold text-gray-700">Assigned To:</span>
+                    <span className="text-gray-900">{deviceToDelete.assigned_to}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={cancelDelete}
+                disabled={isDeleting}
+                className="flex-1 px-4 py-2.5 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 font-semibold transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                disabled={isDeleting}
+                className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 font-semibold transition-all flex items-center justify-center gap-2"
+              >
+                {isDeleting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    Delete Device
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

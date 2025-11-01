@@ -8,7 +8,14 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { getUserRole } from "@/lib/auth-helpers";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { HardDrive, Users as UsersIcon, FileText, TrendingUp, Package, ArrowRight, Activity } from "lucide-react";
+import { HardDrive, Users as UsersIcon, FileText, ArrowRight, Activity, BarChart3, Download, FileSpreadsheet } from "lucide-react";
+import { 
+  BarChart, Bar, PieChart, Pie, LineChart, Line, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
+} from "recharts";
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 export default function Home() {
   return (
@@ -27,8 +34,10 @@ function HomeContent() {
     notWorkingDevices: 0,
     totalUsers: 0,
     pendingRequests: 0,
+    pendingIssues: 0,
   });
   const [recentDevices, setRecentDevices] = useState<any[]>([]);
+  const [analytics, setAnalytics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [checkingRole, setCheckingRole] = useState(true);
 
@@ -66,12 +75,12 @@ function HomeContent() {
 
       if (devicesError) throw devicesError;
 
-      // Fetch users
+      // Fetch users count
       const { data: users, error: usersError } = await supabase
-        .from("users")
+        .from("user_roles")
         .select("*");
 
-      if (usersError) throw usersError;
+      if (usersError) console.error("Error fetching users:", usersError);
 
       // Fetch pending requests
       const { data: requests, error: requestsError } = await supabase
@@ -79,7 +88,15 @@ function HomeContent() {
         .select("*")
         .eq("status", "pending");
 
-      if (requestsError) throw requestsError;
+      if (requestsError) console.error("Error fetching requests:", requestsError);
+
+      // Fetch pending issues
+      const { data: issues, error: issuesError } = await supabase
+        .from("issue_reports")
+        .select("*")
+        .eq("status", "pending");
+
+      if (issuesError) console.error("Error fetching issues:", issuesError);
 
       // Calculate stats
       setStats({
@@ -89,16 +106,174 @@ function HomeContent() {
         notWorkingDevices: devices?.filter((d) => d.status === "not_working").length || 0,
         totalUsers: users?.length || 0,
         pendingRequests: requests?.length || 0,
+        pendingIssues: issues?.length || 0,
       });
 
       // Get 5 most recent devices
       setRecentDevices(devices?.slice(0, 5) || []);
+
+      // Fetch analytics data
+      fetchAnalytics();
 
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchAnalytics = async () => {
+    try {
+      const response = await fetch("/api/analytics");
+      if (response.ok) {
+        const data = await response.json();
+        setAnalytics(data);
+      }
+    } catch (error) {
+      console.error("Error fetching analytics:", error);
+    }
+  };
+
+  const exportToExcel = () => {
+    if (!analytics) return;
+
+    const wb = XLSX.utils.book_new();
+
+    // Summary sheet
+    const summaryData = [
+      ["═════════════════════════════════════════════════════════════"],
+      ["█  TAMER PHARMACEUTICAL INDUSTRIES  █"],
+      ["═════════════════════════════════════════════════════════════"],
+      ["📊 IT INVENTORY ANALYTICS REPORT"],
+      ["📅 Generated:", new Date().toLocaleString()],
+      ["═════════════════════════════════════════════════════════════"],
+      [],
+      ["📊 SUMMARY METRICS", ""],
+      ["─────────────────────────────────────", "─────────────"],
+      ["Metric", "Value"],
+      ["─────────────────────────────────────", "─────────────"],
+      ["📦 Total Devices", analytics.summary.totalDevices],
+      ["✅ Assigned Devices", analytics.summary.assignedDevices],
+      ["🟢 Available Devices", analytics.summary.availableDevices],
+      ["❌ Not Working Devices", analytics.summary.notWorkingDevices],
+      ["📈 Devices Added This Month", analytics.summary.devicesAddedThisMonth],
+      ["📊 Assignment Rate", `${analytics.summary.assignmentRate}%`],
+      ["─────────────────────────────────────", "─────────────"],
+      [],
+      ["© Tamer Pharmaceutical Industries - IT Asset Management System"],
+    ];
+    const summaryWS = XLSX.utils.aoa_to_sheet(summaryData);
+    summaryWS['!cols'] = [{ width: 40 }, { width: 18 }];
+    summaryWS['!merges'] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 1 } },
+      { s: { r: 1, c: 0 }, e: { r: 1, c: 1 } },
+      { s: { r: 2, c: 0 }, e: { r: 2, c: 1 } },
+      { s: { r: 3, c: 0 }, e: { r: 3, c: 1 } },
+      { s: { r: 5, c: 0 }, e: { r: 5, c: 1 } },
+      { s: { r: 7, c: 0 }, e: { r: 7, c: 1 } },
+      { s: { r: 18, c: 0 }, e: { r: 18, c: 1 } },
+    ];
+    XLSX.utils.book_append_sheet(wb, summaryWS, "📊 Summary");
+
+    // Device Types sheet
+    const typesData = [
+      ["═════════════════════════════════════════════════════════════"],
+      ["█  TAMER PHARMACEUTICAL INDUSTRIES  █"],
+      ["═════════════════════════════════════════════════════════════"],
+      ["💻 DEVICE TYPE DISTRIBUTION"],
+      [],
+      ["Device Type", "Count", "Percentage"],
+      ["─────────────────────────", "─────────", "─────────────"],
+      ...analytics.charts.deviceTypeDistribution.map((item: any) => {
+        const total = analytics.charts.deviceTypeDistribution.reduce((sum: number, i: any) => sum + i.value, 0);
+        const percentage = ((item.value / total) * 100).toFixed(1);
+        return [item.name, item.value, `${percentage}%`];
+      }),
+      ["─────────────────────────", "─────────", "─────────────"],
+      [],
+      ["© Tamer Pharmaceutical Industries"],
+    ];
+    const typesWS = XLSX.utils.aoa_to_sheet(typesData);
+    typesWS['!cols'] = [{ width: 30 }, { width: 12 }, { width: 15 }];
+    typesWS['!merges'] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 2 } },
+      { s: { r: 1, c: 0 }, e: { r: 1, c: 2 } },
+      { s: { r: 2, c: 0 }, e: { r: 2, c: 2 } },
+      { s: { r: 3, c: 0 }, e: { r: 3, c: 2 } },
+      { s: { r: typesData.length - 1, c: 0 }, e: { r: typesData.length - 1, c: 2 } },
+    ];
+    XLSX.utils.book_append_sheet(wb, typesWS, "💻 Device Types");
+
+    XLSX.writeFile(wb, `Tamer_IT_Inventory_Analytics_${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+
+  const exportToPDF = async () => {
+    if (!analytics) return;
+
+    const doc = new jsPDF();
+
+    try {
+      const img = new Image();
+      img.src = '/TamerLogo_Report.png';
+      
+      await new Promise((resolve) => {
+        img.onload = () => {
+          doc.addImage(img, 'PNG', 14, 10, 50, 15);
+          resolve(true);
+        };
+        img.onerror = () => resolve(true);
+      });
+    } catch (error) {
+      console.error("Error loading logo:", error);
+    }
+
+    doc.setFontSize(12);
+    doc.setTextColor(22, 163, 74);
+    doc.text("Tamer Consumer", doc.internal.pageSize.getWidth() / 2, 18, { align: 'center' });
+
+    doc.setFontSize(18);
+    doc.setTextColor(22, 163, 74);
+    doc.text("IT Inventory Analytics Report", 14, 35);
+
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 42);
+
+    doc.setFontSize(14);
+    doc.setTextColor(0);
+    doc.text("Summary", 14, 55);
+
+    autoTable(doc, {
+      startY: 60,
+      head: [['Metric', 'Value']],
+      body: [
+        ['Total Devices', analytics.summary.totalDevices.toString()],
+        ['Assigned Devices', analytics.summary.assignedDevices.toString()],
+        ['Available Devices', analytics.summary.availableDevices.toString()],
+        ['Not Working Devices', analytics.summary.notWorkingDevices.toString()],
+        ['Devices Added This Month', analytics.summary.devicesAddedThisMonth.toString()],
+        ['Assignment Rate', `${analytics.summary.assignmentRate}%`],
+      ],
+      theme: 'grid',
+      headStyles: { fillColor: [22, 163, 74], textColor: [255, 255, 255], fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [240, 253, 244] },
+    });
+
+    const finalY = (doc as any).lastAutoTable.finalY || 60;
+    doc.setFontSize(14);
+    doc.setTextColor(0);
+    doc.text("Device Type Distribution", 14, finalY + 15);
+
+    autoTable(doc, {
+      startY: finalY + 20,
+      head: [['Device Type', 'Count']],
+      body: analytics.charts.deviceTypeDistribution.map((item: any) => [item.name, item.value.toString()]),
+      theme: 'grid',
+      headStyles: { fillColor: [22, 163, 74], textColor: [255, 255, 255], fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [240, 253, 244] },
+    });
+
+    doc.save(`Tamer_IT_Inventory_Analytics_${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
   if (checkingRole) {
@@ -159,7 +334,7 @@ function HomeContent() {
                 {/* Stats Grid */}
                 <div>
                   <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Stats</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     {/* Total Devices */}
                     <Link
                       href="/devices"
@@ -217,8 +392,229 @@ function HomeContent() {
                         </p>
                       )}
                     </Link>
+
+                    {/* Pending Issues */}
+                    <Link
+                      href="/manage-issues"
+                      className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-all group"
+                    >
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="bg-gradient-to-br from-red-100 to-rose-100 p-3 rounded-lg">
+                          <FileText className="w-6 h-6 text-red-600" />
+                        </div>
+                        <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-red-600 transition-colors" />
+                      </div>
+                      <p className="text-sm text-gray-600 font-medium">Pending Issues</p>
+                      <p className="text-3xl font-bold text-gray-900 mt-1">{stats.pendingIssues}</p>
+                      {stats.pendingIssues > 0 && (
+                        <p className="text-xs text-red-600 font-medium mt-3">
+                          Requires resolution
+                        </p>
+                      )}
+                    </Link>
                   </div>
                 </div>
+
+                {/* Analytics Dashboard */}
+                {analytics && (
+                  <div className="space-y-6 animate-fade-in">
+                    {/* Analytics Header */}
+                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg shadow-md p-6 border border-green-100">
+                      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                          <div className="p-3 bg-green-500 rounded-lg">
+                            <BarChart3 className="w-6 h-6 text-white" />
+                          </div>
+                          <div>
+                            <h2 className="text-2xl font-bold text-gray-800">Analytics & Insights</h2>
+                            <p className="text-sm text-gray-600">Real-time inventory analytics and reports</p>
+                          </div>
+                        </div>
+                        <div className="flex gap-3">
+                          <button
+                            onClick={exportToExcel}
+                            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all hover:shadow-lg"
+                          >
+                            <FileSpreadsheet className="w-4 h-4" />
+                            Export Excel
+                          </button>
+                          <button
+                            onClick={exportToPDF}
+                            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all hover:shadow-lg"
+                          >
+                            <Download className="w-4 h-4" />
+                            Export PDF
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Key Metrics Cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                      <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200 hover-lift">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="text-sm text-gray-600 font-medium">Total Devices</p>
+                            <p className="text-3xl font-bold text-gray-800 mt-2">{analytics.summary.totalDevices}</p>
+                          </div>
+                          <div className="p-3 bg-blue-100 rounded-lg">
+                            <HardDrive className="w-6 h-6 text-blue-600" />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200 hover-lift">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="text-sm text-gray-600 font-medium">Added This Month</p>
+                            <p className="text-3xl font-bold text-gray-800 mt-2">{analytics.summary.devicesAddedThisMonth}</p>
+                            <p className="text-xs text-green-600 font-medium mt-1">📈 Recent additions</p>
+                          </div>
+                          <div className="p-3 bg-green-100 rounded-lg">
+                            <Activity className="w-6 h-6 text-green-600" />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200 hover-lift">
+                        <div>
+                          <p className="text-sm text-gray-600 font-medium">Assignment Rate</p>
+                          <p className="text-3xl font-bold text-gray-800 mt-2">{analytics.summary.assignmentRate}%</p>
+                          <div className="mt-3 bg-gray-200 rounded-full h-2">
+                            <div
+                              className="bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full transition-all"
+                              style={{ width: `${analytics.summary.assignmentRate}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200 hover-lift">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="text-sm text-gray-600 font-medium">Recent Assignments</p>
+                            <p className="text-3xl font-bold text-gray-800 mt-2">{analytics.summary.recentAssignments}</p>
+                            <p className="text-xs text-gray-500 mt-1">Last 30 days</p>
+                          </div>
+                          <div className="p-3 bg-purple-100 rounded-lg">
+                            <UsersIcon className="w-6 h-6 text-purple-600" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Charts Grid */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {/* Device Status Distribution */}
+                      <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200 hover-lift">
+                        <h3 className="text-lg font-semibold text-gray-800 mb-4">Device Status Distribution</h3>
+                        <ResponsiveContainer width="100%" height={300}>
+                          <PieChart>
+                            <Pie
+                              data={analytics.charts.statusDistribution}
+                              dataKey="value"
+                              nameKey="name"
+                              cx="50%"
+                              cy="50%"
+                              outerRadius={100}
+                              label={(entry) => `${entry.name}: ${entry.value}`}
+                            >
+                              {analytics.charts.statusDistribution.map((entry: any, index: number) => {
+                                const colors = ['#22c55e', '#3b82f6', '#ef4444'];
+                                return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />;
+                              })}
+                            </Pie>
+                            <Tooltip />
+                            <Legend />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+
+                      {/* Device Types */}
+                      <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200 hover-lift">
+                        <h3 className="text-lg font-semibold text-gray-800 mb-4">Top Device Types</h3>
+                        <ResponsiveContainer width="100%" height={300}>
+                          <BarChart data={analytics.charts.deviceTypeDistribution.slice(0, 8)} layout="vertical">
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis type="number" />
+                            <YAxis dataKey="name" type="category" width={100} />
+                            <Tooltip />
+                            <Bar dataKey="value" fill="#22c55e" />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+
+                      {/* Purchase Timeline */}
+                      <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200 hover-lift">
+                        <h3 className="text-lg font-semibold text-gray-800 mb-4">Purchase Timeline (6 Months)</h3>
+                        <ResponsiveContainer width="100%" height={300}>
+                          <LineChart data={analytics.charts.purchaseTimeline}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="month" />
+                            <YAxis />
+                            <Tooltip />
+                            <Legend />
+                            <Line type="monotone" dataKey="count" stroke="#22c55e" strokeWidth={2} />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+
+                      {/* Assignment Timeline */}
+                      <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200 hover-lift">
+                        <h3 className="text-lg font-semibold text-gray-800 mb-4">Assignment Timeline (6 Months)</h3>
+                        <ResponsiveContainer width="100%" height={300}>
+                          <LineChart data={analytics.charts.assignmentTimeline}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="month" />
+                            <YAxis />
+                            <Tooltip />
+                            <Legend />
+                            <Line type="monotone" dataKey="count" stroke="#3b82f6" strokeWidth={2} />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+
+                      {/* Top Brands */}
+                      <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200 hover-lift">
+                        <h3 className="text-lg font-semibold text-gray-800 mb-4">Top 6 Brands</h3>
+                        <ResponsiveContainer width="100%" height={300}>
+                          <BarChart data={analytics.charts.topBrands.slice(0, 6)} layout="vertical">
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis type="number" />
+                            <YAxis dataKey="name" type="category" width={100} />
+                            <Tooltip />
+                            <Bar dataKey="value" fill="#16a34a" />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+
+                      {/* Top Users */}
+                      <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200 hover-lift">
+                        <h3 className="text-lg font-semibold text-gray-800 mb-4">Top 5 Users by Devices</h3>
+                        <div className="space-y-4">
+                          {analytics.charts.topUsers.slice(0, 5).map((user: any, index: number) => (
+                            <div key={index} className="space-y-2">
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm font-medium text-gray-700">
+                                  #{index + 1} {user.name}
+                                </span>
+                                <span className="text-sm font-bold text-green-600">{user.value} devices</span>
+                              </div>
+                              <div className="bg-gray-200 rounded-full h-2">
+                                <div
+                                  className="bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full transition-all"
+                                  style={{
+                                    width: `${(user.value / analytics.charts.topUsers[0].value) * 100}%`,
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Recent Devices */}
                 <div>

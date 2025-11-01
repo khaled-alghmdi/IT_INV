@@ -7,7 +7,8 @@ import { useAuth } from "@/lib/auth-context";
 import UserRoute from "@/components/UserRoute";
 import Sidebar from "@/components/Sidebar";
 import Navbar from "@/components/Navbar";
-import { Monitor, HardDrive, Package, Calendar } from "lucide-react";
+import { Monitor, HardDrive, Package, Calendar, Copy, Check } from "lucide-react";
+import DeliveryChatbot from "@/components/DeliveryChatbot";
 
 export default function MyDevicesPage() {
   return (
@@ -21,6 +22,7 @@ function MyDevicesContent() {
   const { user } = useAuth();
   const [devices, setDevices] = useState<Device[]>([]);
   const [loading, setLoading] = useState(true);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -66,6 +68,22 @@ function MyDevicesContent() {
     return <HardDrive className="w-6 h-6 text-green-600" />;
   };
 
+  const handleCopyInfo = async (device: Device) => {
+    const info = `Asset Number: ${device.asset_number}
+Serial Number: ${device.serial_number}
+User Email: ${user?.email || 'Not Assigned'}
+Device Type: ${device.device_type}
+Brand/Model: ${device.brand} ${device.model}`;
+
+    try {
+      await navigator.clipboard.writeText(info);
+      setCopiedId(device.id);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50/30 via-white to-emerald-50/30 dots-background flex flex-col">
       {/* Top Navbar */}
@@ -80,8 +98,23 @@ function MyDevicesContent() {
           {/* Page Header */}
           <div className="bg-white shadow-sm border-b border-gray-200 sticky top-[60px] z-40">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-              <h1 className="text-3xl font-bold text-gray-900">My Devices</h1>
-              <p className="text-gray-600 mt-1">View all devices currently assigned to you</p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900">My Devices</h1>
+                  <p className="text-gray-600 mt-1">View all devices currently assigned to you</p>
+                </div>
+                <a
+                  href="https://tmrphelpdesk.service-now.com/tac?id=sc_cat_item&sys_id=18f46b17c35b0210cfc22e75e0013135"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all font-semibold shadow-lg hover:shadow-xl"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Fill Delivery Note
+                </a>
+              </div>
             </div>
           </div>
 
@@ -178,6 +211,30 @@ function MyDevicesContent() {
                       </div>
                     )}
                   </div>
+
+                  {/* Copy Button */}
+                  <div className="px-6 pb-6">
+                    <button
+                      onClick={() => handleCopyInfo(device)}
+                      className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all font-medium ${
+                        copiedId === device.id
+                          ? 'bg-green-100 text-green-700 border-2 border-green-300'
+                          : 'bg-blue-50 text-blue-600 border-2 border-blue-200 hover:bg-blue-100 hover:border-blue-300'
+                      }`}
+                    >
+                      {copiedId === device.id ? (
+                        <>
+                          <Check className="w-5 h-5" />
+                          <span>Copied!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-5 h-5" />
+                          <span>Copy Device Info</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -186,6 +243,9 @@ function MyDevicesContent() {
           </main>
         </div>
       </div>
+
+      {/* AI Chatbot Helper */}
+      <DeliveryChatbot />
     </div>
   );
 }

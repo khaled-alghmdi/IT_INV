@@ -1,5 +1,6 @@
 import { Device } from "@/lib/types";
-import { Edit2, Trash2, Monitor, HardDrive } from "lucide-react";
+import { Edit2, Trash2, Monitor, HardDrive, Copy, Check } from "lucide-react";
+import { useState } from "react";
 
 interface DeviceListProps {
   devices: Device[];
@@ -8,6 +9,24 @@ interface DeviceListProps {
 }
 
 const DeviceList = ({ devices, onEdit, onDelete }: DeviceListProps) => {
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const handleCopyInfo = async (device: Device) => {
+    const info = `Asset Number: ${device.asset_number}
+Serial Number: ${device.serial_number}
+User Email: ${device.assigned_to || 'Not Assigned'}
+Device Type: ${device.device_type}
+Brand/Model: ${device.brand} ${device.model}`;
+
+    try {
+      await navigator.clipboard.writeText(info);
+      setCopiedId(device.id);
+      setTimeout(() => setCopiedId(null), 2000); // Reset after 2 seconds
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "assigned":
@@ -124,6 +143,22 @@ const DeviceList = ({ devices, onEdit, onDelete }: DeviceListProps) => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <div className="flex justify-end gap-2">
+                    <button
+                      onClick={() => handleCopyInfo(device)}
+                      className={`${
+                        copiedId === device.id
+                          ? 'text-green-600 bg-green-50'
+                          : 'text-blue-600 hover:text-blue-900 hover:bg-blue-50'
+                      } p-2 rounded-lg transition-all shadow-sm hover:shadow`}
+                      aria-label={`Copy info for ${device.asset_number}`}
+                      title="Copy device info"
+                    >
+                      {copiedId === device.id ? (
+                        <Check className="w-4 h-4" />
+                      ) : (
+                        <Copy className="w-4 h-4" />
+                      )}
+                    </button>
                     <button
                       onClick={() => onEdit(device)}
                       className="text-green-600 hover:text-green-900 p-2 rounded-lg hover:bg-green-50 transition-all shadow-sm hover:shadow"

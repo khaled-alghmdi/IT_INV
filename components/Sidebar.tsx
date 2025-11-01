@@ -1,6 +1,6 @@
 "use client";
 
-import { LogOut, User, Users, LayoutDashboard, FileText, Package, Monitor, HardDrive, BarChart3 } from "lucide-react";
+import { LogOut, User, Users, LayoutDashboard, FileText, Package, Monitor, HardDrive, BarChart3, AlertCircle } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -14,6 +14,7 @@ const Sidebar = () => {
   const pathname = usePathname();
   const [isAdmin, setIsAdmin] = useState(false);
   const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
+  const [pendingIssuesCount, setPendingIssuesCount] = useState(0);
 
   useEffect(() => {
     const checkRole = async () => {
@@ -22,9 +23,10 @@ const Sidebar = () => {
       
       if (role === "admin") {
         fetchPendingRequests();
+        fetchPendingIssues();
         
         // Subscribe to changes in device_requests table
-        const channel = supabase
+        const requestsChannel = supabase
           .channel("device_requests_changes")
           .on(
             "postgres_changes",
@@ -39,8 +41,25 @@ const Sidebar = () => {
           )
           .subscribe();
 
+        // Subscribe to changes in issue_reports table
+        const issuesChannel = supabase
+          .channel("issue_reports_changes")
+          .on(
+            "postgres_changes",
+            {
+              event: "*",
+              schema: "public",
+              table: "issue_reports",
+            },
+            () => {
+              fetchPendingIssues();
+            }
+          )
+          .subscribe();
+
         return () => {
-          supabase.removeChannel(channel);
+          supabase.removeChannel(requestsChannel);
+          supabase.removeChannel(issuesChannel);
         };
       }
     };
@@ -59,6 +78,20 @@ const Sidebar = () => {
       setPendingRequestsCount(data?.length || 0);
     } catch (error) {
       console.error("Error fetching pending requests:", error);
+    }
+  };
+
+  const fetchPendingIssues = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("issue_reports")
+        .select("id", { count: "exact" })
+        .eq("status", "pending");
+
+      if (error) throw error;
+      setPendingIssuesCount(data?.length || 0);
+    } catch (error) {
+      console.error("Error fetching pending issues:", error);
     }
   };
 
@@ -154,6 +187,23 @@ const Sidebar = () => {
                 <BarChart3 className="w-5 h-5" />
                 <span className="text-sm">Reports</span>
               </Link>
+
+              <Link
+                href="/manage-issues"
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all font-medium relative ${
+                  pathname === "/manage-issues"
+                    ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-md"
+                    : "text-gray-700 hover:bg-white hover:shadow-sm"
+                }`}
+              >
+                <AlertCircle className="w-5 h-5" />
+                <span className="text-sm">Manage Issues</span>
+                {pendingIssuesCount > 0 && (
+                  <span className="absolute right-3 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-lg">
+                    {pendingIssuesCount}
+                  </span>
+                )}
+              </Link>
             </>
           ) : (
             <>
@@ -180,6 +230,30 @@ const Sidebar = () => {
               >
                 <Monitor className="w-5 h-5" />
                 <span className="text-sm">Request Device</span>
+              </Link>
+
+              <Link
+                href="/report-issue"
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all font-medium ${
+                  pathname === "/report-issue"
+                    ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-md"
+                    : "text-gray-700 hover:bg-white hover:shadow-sm"
+                }`}
+              >
+                <AlertCircle className="w-5 h-5" />
+                <span className="text-sm">Report Issue</span>
+              </Link>
+
+              <Link
+                href="/my-issues"
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all font-medium ${
+                  pathname === "/my-issues"
+                    ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-md"
+                    : "text-gray-700 hover:bg-white hover:shadow-sm"
+                }`}
+              >
+                <FileText className="w-5 h-5" />
+                <span className="text-sm">My Issues</span>
               </Link>
             </>
           )}

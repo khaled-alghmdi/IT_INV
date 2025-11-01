@@ -83,7 +83,7 @@ const AddDeviceModal = ({ isOpen, onClose }: AddDeviceModalProps) => {
         return;
       }
 
-      // Prepare data for insertion
+      // Prepare data for insertion - ONLY columns that exist in table
       const deviceData: any = {
         asset_number: formData.asset_number,
         serial_number: formData.serial_number,
@@ -92,20 +92,20 @@ const AddDeviceModal = ({ isOpen, onClose }: AddDeviceModalProps) => {
         model: formData.model || null,
         status: formData.status,
         notes: formData.notes || null,
+        purchase_date: formData.purchase_date || null,
+        assigned_to: null,
+        assigned_date: null,
       };
 
-      // Only add assigned_to and assigned_date if status is assigned
+      // Only set assigned_to and assigned_date if status is assigned
       if (formData.status === "assigned") {
         deviceData.assigned_to = formData.assigned_to || null;
         deviceData.assigned_date = formData.assigned_date || new Date().toISOString().split('T')[0];
-      } else {
-        deviceData.assigned_to = null;
-        deviceData.assigned_date = null;
       }
 
       const { error: insertError } = await supabase
         .from("devices")
-        .insert([deviceData]);
+        .insert(deviceData);
 
       if (insertError) throw insertError;
 

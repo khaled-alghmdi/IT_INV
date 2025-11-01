@@ -9,11 +9,11 @@ export const isUserAdmin = async (): Promise<boolean> => {
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
-      console.log("❌ No user logged in");
+      console.log("❌ [isUserAdmin] No user logged in");
       return false;
     }
 
-    console.log("🔍 Checking admin status for:", user.email);
+    console.log("🔍 [isUserAdmin] Checking admin status for:", user.email, "| User ID:", user.id);
 
     const { data, error } = await supabase
       .from("user_roles")
@@ -22,19 +22,26 @@ export const isUserAdmin = async (): Promise<boolean> => {
       .single();
 
     if (error) {
-      console.error("❌ Error fetching role:", error);
+      console.error("❌ [isUserAdmin] 406 ERROR SOURCE - Error fetching role:", {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        user_id: user.id,
+        user_email: user.email
+      });
       return false;
     }
 
     if (!data) {
-      console.log("⚠️ No role found for user");
+      console.log("⚠️ [isUserAdmin] No role found for user");
       return false;
     }
 
-    console.log("✅ User role:", data.role);
+    console.log("✅ [isUserAdmin] User role:", data.role);
     return data.role === "admin";
   } catch (error) {
-    console.error("❌ Error checking admin status:", error);
+    console.error("❌ [isUserAdmin] Catch block error:", error);
     return false;
   }
 };
@@ -46,7 +53,12 @@ export const getUserRole = async (): Promise<UserRole> => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
     
-    if (!user) return "user";
+    if (!user) {
+      console.log("❌ [getUserRole] No user logged in");
+      return "user";
+    }
+
+    console.log("🔍 [getUserRole] Fetching role for:", user.email, "| User ID:", user.id);
 
     const { data, error } = await supabase
       .from("user_roles")
@@ -54,11 +66,27 @@ export const getUserRole = async (): Promise<UserRole> => {
       .eq("user_id", user.id)
       .single();
 
-    if (error || !data) return "user";
+    if (error) {
+      console.error("❌ [getUserRole] 406 ERROR SOURCE - Error fetching role:", {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        user_id: user.id,
+        user_email: user.email
+      });
+      return "user";
+    }
 
+    if (!data) {
+      console.log("⚠️ [getUserRole] No role found, returning 'user'");
+      return "user";
+    }
+
+    console.log("✅ [getUserRole] User role:", data.role);
     return data.role as UserRole;
   } catch (error) {
-    console.error("Error getting user role:", error);
+    console.error("❌ [getUserRole] Catch block error:", error);
     return "user";
   }
 };
